@@ -146,10 +146,12 @@
     };
 
     const loadResults = () => {
-        fetch('https://www.windy.com/img/windy-plugins/boats.json')
+        fetch('https://raw.githubusercontent.com/aeolusweather/windy-plugin-template/refs/heads/main/data/aeris.json')
             .then(response => response.json())
             .then(result => result.ships)
             .then((results: ShipResult[]) => {
+                console.log("Got ships!");
+                console.log(results);
                 const temporaryListOfBoats: DisplayedShip[] = [];
                 let hue = 0;
 
@@ -160,7 +162,7 @@
                     const color = `hsl(${hue}, 100%, 45%)`;
 
                     let track: [number, number][] = [];
-                    for (const coord of boat.track) {
+                    for (const coord of boat.track.coordinates) {
                         track.push([coord.lat, coord.lng])
                     }
 
@@ -176,7 +178,9 @@
                         icon: boatIcon,
                     }).addTo(map);
 
-                    markers.push({ boat.id, marker, boat.position });
+                    let id = boat.id;
+                    let pos = boat.position;
+                    markers.push({ id, marker, pos });
                     marker._icon.setAttribute('data-heading', String(boat.heading));
                     marker.on('click', () => displayPopup(boat.id));
 
