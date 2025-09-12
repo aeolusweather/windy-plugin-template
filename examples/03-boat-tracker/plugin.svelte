@@ -72,13 +72,13 @@
 
     // IMPORTANT: all types must be imported as `type` otherwise
     // Svelte TS compiler will fail
-    import type { BoatResult, DisplayedBoat, ExtendedMarker } from './boatTypes';
+    import type { BoatResult, DisplayedBoat, ExtendedMarker, ShipResult, DisplayedShip, Track, Coord } from './boatTypes';
 
     import type { CoordsInterpolationFun } from '@windy/interpolator';
 
     let markers: ExtendedMarker[] = [];
     let lines: L.Polyline[] = [];
-    let listOfBoats: DisplayedBoat[] = [];
+    let listOfBoats: DisplayedShip[] = [];
     let openedPopup: L.Popup | null = null;
 
     const updateIconStyles = () => {
@@ -148,18 +148,21 @@
     const loadResults = () => {
         fetch('https://www.windy.com/img/windy-plugins/boats.json')
             .then(response => response.json())
-            .then(result => result.result)
-            .then((results: Record<string, BoatResult>) => {
-                const temporaryListOfBoats: DisplayedBoat[] = [];
+            .then(result => result.ships)
+            .then((results: ShipResult[]) => {
+                const temporaryListOfBoats: DisplayedShip[] = [];
                 let hue = 0;
 
-                for (const boatName of Object.keys(results)) {
+                for (const boat of results) {
                     // Change color for each boat
                     hue = (hue + 60) % 360;
 
-                    const boat = results[boatName];
-                    const { track, heading, sail } = boat;
                     const color = `hsl(${hue}, 100%, 45%)`;
+
+                    let track: [number, number][] = [];
+                    for (const coord of boat.track) {
+                        track.push([coord.lat, coord.lng])
+                    }
 
                     const layer = new L.Polyline(track, {
                         color,
@@ -169,25 +172,24 @@
                     layer.on('mouseover', () => layer.setStyle({ weight: 4 }));
                     layer.on('mouseout', () => layer.setStyle({ weight: 2 }));
 
-                    const latestPosition = track[track.length - 1];
-                    const marker = new L.Marker(latestPosition, {
+                    const marker = new L.Marker(boat.position, {
                         icon: boatIcon,
                     }).addTo(map);
 
-                    markers.push({ sail, marker, latestPosition });
-                    marker._icon.setAttribute('data-heading', String(heading));
-                    marker.on('click', () => displayPopup(sail));
+                    markers.push({ boat.id, marker, boat.position });
+                    marker._icon.setAttribute('data-heading', String(boat.heading));
+                    marker.on('click', () => displayPopup(boat.id));
 
                     lines.push(layer);
 
-                    const displayedBoat: DisplayedBoat = { ...boat, color };
+                    const displayedBoat: DisplayedShip = { ...boat, color };
                     temporaryListOfBoats.push(displayedBoat);
 
                     updateIconStyles();
                 }
 
                 // Sort temporary list of boats by rank
-                listOfBoats = temporaryListOfBoats.sort((a, b) => a.rank - b.rank);
+                listOfBoats = temporaryListOfBoats;//.sort((a, b) => a.id - b.rank);
             })
             .catch(console.error);
     };

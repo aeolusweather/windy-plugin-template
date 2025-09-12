@@ -1,3 +1,26 @@
+export interface Coord {
+    lat: number;
+    lng: number;
+}
+
+export interface Track {
+    coordinates: Coord[];
+    timestamps: number[];
+}
+
+export interface ShipResult {
+    id: string;
+    name: string;
+    position: Coord;
+    track: Track;
+    heading: number;
+    speed: number;
+}
+
+export interface DisplayedShip extends ShipResult {
+    color: string;
+}
+
 export interface BoatResult {
     heading: number;
     rank: number;
