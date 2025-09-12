@@ -34,23 +34,17 @@
             </div>
         </div>
         {#each listOfBoats as boat}
-            {@const { sail, color, rank, heading, total_time } = boat}
+            {@const { id, color, heading } = boat}
             <div
                 class="boat mb-20 size-xs clickable"
                 style:border-left-color={color}
-                on:click={() => displayPopup(sail)}
+                on:click={() => displayPopup(id)}
             >
                 <div class="boat__name size-l mb-5">
-                    {sail}
-                </div>
-                <div class="boat__rank">
-                    Rank: {rank}
+                    {id}
                 </div>
                 <div class="boat__heading">
                     Heading: {heading}°
-                </div>
-                <div class="boat__speed">
-                    {total_time}
                 </div>
             </div>
         {/each}
@@ -99,7 +93,7 @@
     const displayPopup = (sail: string) => {
         openedPopup?.remove();
 
-        const clickedBoat: ExtendedMarker | void = markers.find(m => m.sail === sail);
+        const clickedBoat: ExtendedMarker | void = markers.find(m => m.id === sail);
 
         if (!clickedBoat) {
             throw new Error('Boat not found!');
@@ -109,8 +103,8 @@
         // position of the boat
         getLatLonInterpolator().then((interpolateLatLon: CoordsInterpolationFun | null) => {
             let html = `Sail: ${sail}<br /><br />`;
-            const { latestPosition } = clickedBoat;
-            const [lat, lon] = latestPosition;
+            const lat = clickedBoat.pos.lat;
+            const lon = clickedBoat.pos.lng;
 
             if (!interpolateLatLon) {
                 html += 'No interpolator available<br />for this overlay';
@@ -139,7 +133,7 @@
             }
 
             openedPopup = new L.Popup({ autoClose: false, closeOnClick: false })
-                .setLatLng(latestPosition)
+                .setLatLng([lat, lon])
                 .setContent(html)
                 .openOn(map);
         });
@@ -150,8 +144,6 @@
             .then(response => response.json())
             .then(result => result.ships)
             .then((results: ShipResult[]) => {
-                console.log("Got ships!");
-                console.log(results);
                 const temporaryListOfBoats: DisplayedShip[] = [];
                 let hue = 0;
 
